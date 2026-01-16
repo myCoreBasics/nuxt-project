@@ -82,7 +82,7 @@ const router = useRouter();
 // onMounted(() => {
 //   const token = useCookie('auth_token');
 //   if (token.value) {
-//     router.push('/board/list');
+//     router.push('/');
 //   }
 // });
 
