@@ -30,5 +30,9 @@ export { requestIdleCallback, cancelIdleCallback } from '#app/compat/idle-callba
 export { setInterval } from '#app/compat/interval';
 export { definePageMeta } from '../node_modules/nuxt/dist/pages/runtime/composables';
 export { defineLazyHydrationComponent } from '#app/composables/lazy-hydration';
+export { useAuth } from '../composables/useAuth';
 export { useCart } from '../composables/useCart';
+export { getDbPool } from '../utils/db';
+export { generateToken, verifyToken } from '../utils/jwt';
+export { default as useSession } from '../node_modules/@sidebase/nuxt-session/dist/runtime/composables/useSession';
 export { useNuxtDevTools } from '../node_modules/@nuxt/devtools/dist/runtime/use-nuxt-devtools';

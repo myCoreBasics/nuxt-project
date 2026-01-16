@@ -3,8 +3,10 @@ import { Server } from 'node:http';
 import { resolve, dirname, join } from 'node:path';
 import nodeCrypto from 'node:crypto';
 import { parentPort, threadId } from 'node:worker_threads';
-import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, getQuery as getQuery$1, readBody, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getResponseStatus, getRouterParam, getResponseStatusText } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/h3/dist/index.mjs';
+import { defineEventHandler, handleCacheHeaders, splitCookiesString, createEvent, fetchWithEvent, isEvent, eventHandler, setHeaders, sendRedirect, proxyRequest, getRequestHeader, setResponseHeaders, setResponseStatus, send, getRequestHeaders, setResponseHeader, appendResponseHeader, getRequestURL, getResponseHeader, removeResponseHeader, createError, useSession, getCookie, getQuery as getQuery$1, readBody, getResponseStatus, deleteCookie, parseCookies, setCookie, createApp, createRouter as createRouter$1, toNodeListener, lazyEventHandler, getRouterParam, getResponseStatusText } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/h3/dist/index.mjs';
 import { escapeHtml } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/@vue/shared/dist/shared.cjs.js';
+import bcrypt from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/bcrypt/bcrypt.js';
+import mysql from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/mysql2/promise.js';
 import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/vue-bundle-renderer/dist/runtime.mjs';
 import { parseURL, withoutBase, joinURL, getQuery, withQuery, withTrailingSlash, decodePath, withLeadingSlash, withoutTrailingSlash, joinRelativeURL } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/ufo/dist/index.mjs';
 import process$1 from 'node:process';
@@ -35,7 +37,12 @@ import { captureRawStackTrace, parseRawStackTrace } from 'file://C:/Users/user/D
 import { promises } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname as dirname$1, resolve as resolve$1 } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/pathe/dist/index.mjs';
+import jwt from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/jsonwebtoken/index.js';
 import { walkResolver } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/unhead/dist/utils.mjs';
+import { nanoid } from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/nanoid/index.js';
+import dayjs from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/dayjs/dayjs.min.js';
+import sessionDriver from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/unstorage/drivers/memory.mjs';
+import * as argon2 from 'file://C:/Users/user/Desktop/dev/nuxt-myshop/node_modules/argon2/argon2.js';
 
 const serverAssets = [{"baseName":"server","dir":"C:/Users/user/Desktop/dev/nuxt-myshop/server/assets"}];
 
@@ -45,18 +52,18 @@ for (const asset of serverAssets) {
   assets$1.mount(asset.baseName, unstorage_47drivers_47fs({ base: asset.dir, ignore: (asset?.ignore || []) }));
 }
 
-const storage = createStorage({});
+const storage$1 = createStorage({});
 
-storage.mount('/assets', assets$1);
+storage$1.mount('/assets', assets$1);
 
-storage.mount('root', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"C:/Users/user/Desktop/dev/nuxt-myshop","watchOptions":{"ignored":[null]}}));
-storage.mount('src', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/server","watchOptions":{"ignored":[null]}}));
-storage.mount('build', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/.nuxt"}));
-storage.mount('cache', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/.nuxt/cache"}));
-storage.mount('data', unstorage_47drivers_47fs({"driver":"fs","base":"C:/Users/user/Desktop/dev/nuxt-myshop/.data/kv"}));
+storage$1.mount('root', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"C:/Users/user/Desktop/dev/nuxt-myshop","watchOptions":{"ignored":[null]}}));
+storage$1.mount('src', unstorage_47drivers_47fs({"driver":"fs","readOnly":true,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/server","watchOptions":{"ignored":[null]}}));
+storage$1.mount('build', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/.nuxt"}));
+storage$1.mount('cache', unstorage_47drivers_47fs({"driver":"fs","readOnly":false,"base":"C:/Users/user/Desktop/dev/nuxt-myshop/.nuxt/cache"}));
+storage$1.mount('data', unstorage_47drivers_47fs({"driver":"fs","base":"C:/Users/user/Desktop/dev/nuxt-myshop/.data/kv"}));
 
 function useStorage(base = "") {
-  return base ? prefixStorage(storage, base) : storage;
+  return base ? prefixStorage(storage$1, base) : storage$1;
 }
 
 const Hasher = /* @__PURE__ */ (() => {
@@ -648,7 +655,59 @@ const _inlineRuntimeConfig = {
       }
     }
   },
-  "public": {}
+  "public": {
+    "session": {
+      "api": {
+        "isEnabled": true,
+        "methods": [
+          "patch",
+          "delete",
+          "get",
+          "post"
+        ],
+        "basePath": "/api/session"
+      }
+    },
+    "apiBase": "/api"
+  },
+  "jwtSecret": "your-jwt-secret-key-must-be-at-least-32-characters-long-for-security",
+  "sessionSecret": "your-session-secret-key-must-be-at-least-32-characters-long",
+  "session": {
+    "isEnabled": true,
+    "session": {
+      "expiryInSeconds": 600,
+      "idLength": 64,
+      "storePrefix": "sessions",
+      "cookieSameSite": "lax",
+      "cookieSecure": true,
+      "cookieHttpOnly": true,
+      "storageOptions": {
+        "driver": "memory",
+        "options": {}
+      },
+      "domain": false,
+      "ipPinning": false,
+      "rolling": false
+    },
+    "api": {
+      "isEnabled": true,
+      "methods": [
+        "patch",
+        "delete",
+        "get",
+        "post"
+      ],
+      "basePath": "/api/session"
+    },
+    "name": "nuxt-session",
+    "password": "your-session-secret-key-must-be-at-least-32-characters-long",
+    "cookie": {
+      "secure": false,
+      "maxAge": 86400,
+      "httpOnly": true,
+      "path": "/"
+    }
+  }
 };
 const envOptions = {
   prefix: "NITRO_",
@@ -1540,6 +1599,70 @@ const _vtXHKM = eventHandler((event) => {
   return readAsset(id);
 });
 
+const JWT_SECRET = process.env.JWT_SECRET || "your-jwt-secret-key-must-be-at-least-32-characters-long-for-security";
+const generateToken = (payload) => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
+};
+const verifyToken = (token) => {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    return null;
+  }
+};
+
+const _RYeOc1 = defineEventHandler(async (event) => {
+  const url = getRequestURL(event).pathname;
+  const publicPaths = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/logout"
+  ];
+  if (publicPaths.some((path) => url.startsWith(path))) {
+    return;
+  }
+  if (!url.startsWith("/api/")) {
+    return;
+  }
+  let user = null;
+  try {
+    const session = await useSession(event, {
+      password: useRuntimeConfig().sessionSecret
+    });
+    if (session.data.user) {
+      user = session.data.user;
+      console.log(`[${url}] : Session \uD655\uC778 - ${user.userid}`);
+    }
+  } catch (error) {
+    console.log("Session error:", error.message);
+  }
+  if (!user) {
+    const token = getCookie(event, "auth_token");
+    if (token) {
+      const decoded = verifyToken(token);
+      if (decoded) {
+        user = decoded;
+        try {
+          const session = await useSession(event, {
+            password: useRuntimeConfig().sessionSecret
+          });
+          session.data.user = user;
+          console.log(`[${url}] : JWT \uD655\uC778 - ${user.userid}`);
+        } catch (error) {
+          console.log("Session save error:", error.message);
+        }
+      }
+    }
+  }
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      message: "\uC778\uC99D\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
+    });
+  }
+  event.context.user = user;
+});
+
 const VueResolver = (_, value) => {
   return isRef(value) ? toValue(value) : value;
 };
@@ -1861,12 +1984,332 @@ async function getIslandContext(event) {
   return ctx;
 }
 
+function defineRenderHandler(render) {
+  const runtimeConfig = useRuntimeConfig();
+  return eventHandler(async (event) => {
+    const nitroApp = useNitroApp();
+    const ctx = { event, render, response: void 0 };
+    await nitroApp.hooks.callHook("render:before", ctx);
+    if (!ctx.response) {
+      if (event.path === `${runtimeConfig.app.baseURL}favicon.ico`) {
+        setResponseHeader(event, "Content-Type", "image/x-icon");
+        return send(
+          event,
+          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        );
+      }
+      ctx.response = await ctx.render(event);
+      if (!ctx.response) {
+        const _currentStatus = getResponseStatus(event);
+        setResponseStatus(event, _currentStatus === 200 ? 500 : _currentStatus);
+        return send(
+          event,
+          "No response returned from render handler: " + event.path
+        );
+      }
+    }
+    await nitroApp.hooks.callHook("render:response", ctx.response, ctx);
+    if (ctx.response.headers) {
+      setResponseHeaders(event, ctx.response.headers);
+    }
+    if (ctx.response.statusCode || ctx.response.statusMessage) {
+      setResponseStatus(
+        event,
+        ctx.response.statusCode,
+        ctx.response.statusMessage
+      );
+    }
+    return ctx.response.body;
+  });
+}
+
+const scheduledTasks = false;
+
+const tasks = {
+  
+};
+
+const __runningTasks__ = {};
+async function runTask(name, {
+  payload = {},
+  context = {}
+} = {}) {
+  if (__runningTasks__[name]) {
+    return __runningTasks__[name];
+  }
+  if (!(name in tasks)) {
+    throw createError({
+      message: `Task \`${name}\` is not available!`,
+      statusCode: 404
+    });
+  }
+  if (!tasks[name].resolve) {
+    throw createError({
+      message: `Task \`${name}\` is not implemented!`,
+      statusCode: 501
+    });
+  }
+  const handler = await tasks[name].resolve();
+  const taskEvent = { name, payload, context };
+  __runningTasks__[name] = handler.run(taskEvent);
+  try {
+    const res = await __runningTasks__[name];
+    return res;
+  } finally {
+    delete __runningTasks__[name];
+  }
+}
+
+let pool;
+const getDbPool = () => {
+  if (!pool) {
+    pool = mysql.createPool({
+      host: "125.133.91.90",
+      port: 3400,
+      user: "webmaster",
+      password: "12345",
+      database: "webdev",
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
+  }
+  return pool;
+};
+
+const sessionConfig = useRuntimeConfig().session.session;
+const driver = sessionDriver(sessionConfig.storageOptions.options);
+const storage = createStorage({ driver }).mount(sessionConfig.storePrefix, driver);
+const sessionStorage = prefixStorage(storage, sessionConfig.storePrefix);
+
+const getStorageSession = (sessionId) => sessionStorage.getItem(sessionId);
+const setStorageSession = (sessionId, session) => sessionStorage.setItem(sessionId, session);
+const dropStorageSession = (sessionId) => sessionStorage.removeItem(sessionId);
+
+class IpMismatch extends Error {
+  constructor(message = "User IP doesn't match the one in session") {
+    super(message);
+  }
+}
+class IpMissingFromSession extends Error {
+  constructor(message = "No IP in session even though ipPinning is enabled") {
+    super(message);
+  }
+}
+class SessionExpired extends Error {
+  constructor(message = "Session expired") {
+    super(message);
+  }
+}
+
+const argon2Options = {
+  type: argon2.argon2id,
+  hashLength: 60
+};
+const hashIpAddress = (ip) => !ip ? Promise.resolve(void 0) : argon2.hash(ip, argon2Options);
+const ipAddressesMatch = (ip, ipHash) => !ip && !ipHash ? Promise.resolve(false) : argon2.verify(ipHash, ip, argon2Options);
+const extractIpFromHeader = (header) => {
+  if (Array.isArray(header)) {
+    return header[0].split(",")[0];
+  }
+  if (typeof header === "string") {
+    return header.split(",")[0];
+  }
+  return void 0;
+};
+const getRequestIpAddress = ({ req }) => {
+  const sessionOptions = useRuntimeConfig().session.session;
+  const headerName = sessionOptions.ipPinning?.headerName;
+  if (typeof sessionOptions.ipPinning === "object" && "headerName" in sessionOptions.ipPinning.headerName) {
+    return extractIpFromHeader(req.headers[headerName.toLowerCase()]);
+  }
+  return req.socket.remoteAddress;
+};
+const getHashedIpAddress = (event) => {
+  return hashIpAddress(getRequestIpAddress(event));
+};
+const processSessionIp = async (event, session) => {
+  const hashedIP = session.ip;
+  if (!hashedIP) {
+    throw new IpMissingFromSession();
+  }
+  const requestIP = getRequestIpAddress(event);
+  const matches = await ipAddressesMatch(requestIP, hashedIP);
+  if (!matches) {
+    throw new IpMismatch();
+  }
+};
+
+const SESSION_COOKIE_NAME = "sessionId";
+const safeSetCookie = (event, name, value, createdAt) => {
+  const sessionOptions = useRuntimeConfig().session.session;
+  const expirationDate = sessionOptions.expiryInSeconds !== false ? new Date(createdAt.getTime() + sessionOptions.expiryInSeconds * 1e3) : void 0;
+  setCookie(event, name, value, {
+    expires: expirationDate,
+    secure: sessionOptions.cookieSecure,
+    httpOnly: sessionOptions.cookieHttpOnly,
+    sameSite: sessionOptions.cookieSameSite,
+    domain: sessionOptions.domain || void 0
+  });
+};
+const checkSessionExpirationTime = (session, sessionExpiryInSeconds) => {
+  const now = dayjs();
+  if (now.diff(dayjs(session.createdAt), "seconds") > sessionExpiryInSeconds) {
+    throw new SessionExpired();
+  }
+};
+const getCurrentSessionId = (event) => {
+  const sessionIdRequest = parseCookies(event).sessionId;
+  const sessionIdContext = event.context.sessionId;
+  if (sessionIdContext && sessionIdRequest && sessionIdContext !== sessionIdRequest) {
+    return null;
+  }
+  return sessionIdRequest || sessionIdContext || null;
+};
+const deleteSession = async (event) => {
+  const currentSessionId = getCurrentSessionId(event);
+  if (currentSessionId) {
+    await dropStorageSession(currentSessionId);
+  }
+  deleteCookie(event, SESSION_COOKIE_NAME);
+};
+const newSession = async (event) => {
+  const runtimeConfig = useRuntimeConfig();
+  const sessionOptions = runtimeConfig.session.session;
+  const now = new Date();
+  const sessionId = nanoid(sessionOptions.idLength);
+  safeSetCookie(event, SESSION_COOKIE_NAME, sessionId, now);
+  const session = {
+    id: sessionId,
+    createdAt: now,
+    ip: sessionOptions.ipPinning ? await getHashedIpAddress(event) : void 0
+  };
+  await setStorageSession(sessionId, session);
+  return session;
+};
+const getSession = async (event) => {
+  const existingSessionId = getCurrentSessionId(event);
+  if (!existingSessionId) {
+    return null;
+  }
+  const session = await getStorageSession(existingSessionId);
+  if (!isSession(session)) {
+    return null;
+  }
+  const runtimeConfig = useRuntimeConfig();
+  const sessionOptions = runtimeConfig.session.session;
+  const sessionExpiryInSeconds = sessionOptions.expiryInSeconds;
+  try {
+    if (sessionExpiryInSeconds !== false) {
+      checkSessionExpirationTime(session, sessionExpiryInSeconds);
+    }
+    if (sessionOptions.ipPinning) {
+      await processSessionIp(event, session);
+    }
+  } catch {
+    await deleteSession(event);
+    return null;
+  }
+  return session;
+};
+const updateSessionExpirationDate = (session, event) => {
+  const now = new Date();
+  safeSetCookie(event, SESSION_COOKIE_NAME, session.id, now);
+  return { ...session, createdAt: now };
+};
+function isSession(shape) {
+  return typeof shape === "object" && !!shape && "id" in shape && "createdAt" in shape;
+}
+const ensureSession = async (event) => {
+  const sessionOptions = useRuntimeConfig().session.session;
+  let session = await getSession(event);
+  if (!session) {
+    session = await newSession(event);
+  } else if (sessionOptions.rolling) {
+    session = updateSessionExpirationDate(session, event);
+  }
+  event.context.sessionId = session.id;
+  event.context.session = session;
+  return session;
+};
+const _BO6n54 = eventHandler(async (event) => {
+  await ensureSession(event);
+  event.res.on("finish", async () => {
+    const session = await getSession(event);
+    if (!session) {
+      return;
+    }
+    await setStorageSession(session.id, event.context.session);
+  });
+});
+
+const checkIfObjectAndContainsIllegalKeys = (shape) => {
+  if (typeof shape !== "object" || !shape) {
+    return false;
+  }
+  return !!["id", "createdAt", "ip"].find((key) => Object.prototype.hasOwnProperty.call(shape, key));
+};
+const _xd5vD4 = eventHandler(async (event) => {
+  const body = await readBody(event);
+  if (checkIfObjectAndContainsIllegalKeys(body)) {
+    throw createError({ statusCode: 400, message: "Trying to pass invalid data to session, likely an object with `id` or `createdAt` fields or a non-object" });
+  }
+  event.context.session = {
+    ...event.context.session,
+    ...body
+  };
+  return event.context.session;
+});
+
+const _DLRchQ = eventHandler(async (event) => {
+  await deleteSession(event);
+  return null;
+});
+
+const _GAiyzH = eventHandler((event) => event.context.session);
+
+const _aJUB3G = eventHandler(async (event) => {
+  const body = await readBody(event);
+  if (checkIfObjectAndContainsIllegalKeys(body)) {
+    throw createError({ statusCode: 400, message: "Trying to pass invalid data to session, likely an object with `id` or `createdAt` fields or a non-object" });
+  }
+  event.context.session = {
+    ...body,
+    id: event.context.session.id,
+    createdAt: event.context.session.createdAt,
+    ip: event.context.session.ip
+  };
+  return event.context.session;
+});
+
+const _lazy_mTmwpI = () => Promise.resolve().then(function () { return login_post$1; });
+const _lazy_rhgU4Y = () => Promise.resolve().then(function () { return logout_post$1; });
+const _lazy_AT_xUS = () => Promise.resolve().then(function () { return register_post$1; });
+const _lazy_MPvGiY = () => Promise.resolve().then(function () { return _id__delete$1; });
+const _lazy_ltpZaz = () => Promise.resolve().then(function () { return _id__get$1; });
+const _lazy_tHE3Ci = () => Promise.resolve().then(function () { return _id__put$1; });
+const _lazy_gXXuj9 = () => Promise.resolve().then(function () { return create_post$1; });
+const _lazy_vCInP4 = () => Promise.resolve().then(function () { return boards$1; });
 const _lazy_iOla9J = () => Promise.resolve().then(function () { return renderer$1; });
 
 const handlers = [
   { route: '', handler: _vtXHKM, lazy: false, middleware: true, method: undefined },
+  { route: '', handler: _RYeOc1, lazy: false, middleware: true, method: undefined },
+  { route: '/api/auth/login', handler: _lazy_mTmwpI, lazy: true, middleware: false, method: "post" },
+  { route: '/api/auth/logout', handler: _lazy_rhgU4Y, lazy: true, middleware: false, method: "post" },
+  { route: '/api/auth/register', handler: _lazy_AT_xUS, lazy: true, middleware: false, method: "post" },
+  { route: '/api/board/:id', handler: _lazy_MPvGiY, lazy: true, middleware: false, method: "delete" },
+  { route: '/api/board/:id', handler: _lazy_ltpZaz, lazy: true, middleware: false, method: "get" },
+  { route: '/api/board/:id', handler: _lazy_tHE3Ci, lazy: true, middleware: false, method: "put" },
+  { route: '/api/board/create', handler: _lazy_gXXuj9, lazy: true, middleware: false, method: "post" },
+  { route: '/api/boards', handler: _lazy_vCInP4, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_error', handler: _lazy_iOla9J, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
+  { route: '', handler: _BO6n54, lazy: false, middleware: true, method: undefined },
+  { route: '/api/session', handler: _xd5vD4, lazy: false, middleware: false, method: "patch" },
+  { route: '/api/session', handler: _DLRchQ, lazy: false, middleware: false, method: "delete" },
+  { route: '/api/session', handler: _GAiyzH, lazy: false, middleware: false, method: "get" },
+  { route: '/api/session', handler: _aJUB3G, lazy: false, middleware: false, method: "post" },
   { route: '/**', handler: _lazy_iOla9J, lazy: true, middleware: false, method: undefined }
 ];
 
@@ -2011,82 +2454,6 @@ function useNitroApp() {
 }
 runNitroPlugins(nitroApp$1);
 
-function defineRenderHandler(render) {
-  const runtimeConfig = useRuntimeConfig();
-  return eventHandler(async (event) => {
-    const nitroApp = useNitroApp();
-    const ctx = { event, render, response: void 0 };
-    await nitroApp.hooks.callHook("render:before", ctx);
-    if (!ctx.response) {
-      if (event.path === `${runtimeConfig.app.baseURL}favicon.ico`) {
-        setResponseHeader(event, "Content-Type", "image/x-icon");
-        return send(
-          event,
-          "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
-        );
-      }
-      ctx.response = await ctx.render(event);
-      if (!ctx.response) {
-        const _currentStatus = getResponseStatus(event);
-        setResponseStatus(event, _currentStatus === 200 ? 500 : _currentStatus);
-        return send(
-          event,
-          "No response returned from render handler: " + event.path
-        );
-      }
-    }
-    await nitroApp.hooks.callHook("render:response", ctx.response, ctx);
-    if (ctx.response.headers) {
-      setResponseHeaders(event, ctx.response.headers);
-    }
-    if (ctx.response.statusCode || ctx.response.statusMessage) {
-      setResponseStatus(
-        event,
-        ctx.response.statusCode,
-        ctx.response.statusMessage
-      );
-    }
-    return ctx.response.body;
-  });
-}
-
-const scheduledTasks = false;
-
-const tasks = {
-  
-};
-
-const __runningTasks__ = {};
-async function runTask(name, {
-  payload = {},
-  context = {}
-} = {}) {
-  if (__runningTasks__[name]) {
-    return __runningTasks__[name];
-  }
-  if (!(name in tasks)) {
-    throw createError({
-      message: `Task \`${name}\` is not available!`,
-      statusCode: 404
-    });
-  }
-  if (!tasks[name].resolve) {
-    throw createError({
-      message: `Task \`${name}\` is not implemented!`,
-      statusCode: 501
-    });
-  }
-  const handler = await tasks[name].resolve();
-  const taskEvent = { name, payload, context };
-  __runningTasks__[name] = handler.run(taskEvent);
-  try {
-    const res = await __runningTasks__[name];
-    return res;
-  } finally {
-    delete __runningTasks__[name];
-  }
-}
-
 if (!globalThis.crypto) {
   globalThis.crypto = nodeCrypto;
 }
@@ -2196,6 +2563,368 @@ const styles = {};
 const styles$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: styles
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const login_post = defineEventHandler(async (event) => {
+  try {
+    const body = await readBody(event);
+    if (!body.userid || !body.password) {
+      return {
+        success: false,
+        error: "\uC544\uC774\uB514\uC640 \uBE44\uBC00\uBC88\uD638\uB97C \uC785\uB825\uD574\uC8FC\uC138\uC694."
+      };
+    }
+    const pool = getDbPool();
+    const [users] = await pool.query(
+      "SELECT userid, name, password FROM laon_tbl_user WHERE userid = ?",
+      [body.userid]
+    );
+    if (users.length === 0) {
+      return {
+        success: false,
+        error: "\uC544\uC774\uB514 \uB610\uB294 \uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    const user = users[0];
+    const isValid = await bcrypt.compare(body.password, user.password);
+    if (!isValid) {
+      return {
+        success: false,
+        error: "\uC544\uC774\uB514 \uB610\uB294 \uBE44\uBC00\uBC88\uD638\uAC00 \uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    const token = generateToken({
+      userid: user.userid,
+      name: user.name
+    });
+    setCookie(event, "auth_token", token, {
+      httpOnly: false,
+      secure: false,
+      maxAge: 60 * 60 * 24,
+      // 24시간
+      path: "/"
+    });
+    await useSession(event, {
+      password: useRuntimeConfig().sessionSecret
+    }).then((session) => {
+      session.data.user = {
+        userid: user.userid,
+        name: user.name,
+        loginTime: /* @__PURE__ */ new Date()
+      };
+    });
+    setCookie(event, "user_name", user.name, {
+      maxAge: 60 * 60 * 24,
+      path: "/"
+    });
+    setCookie(event, "user_id", user.userid, {
+      maxAge: 60 * 60 * 24,
+      path: "/"
+    });
+    return {
+      success: true,
+      user: {
+        userid: user.userid,
+        name: user.name
+      }
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const login_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: login_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const logout_post = defineEventHandler(async (event) => {
+  try {
+    const session = await useSession(event, {
+      password: useRuntimeConfig().sessionSecret
+    });
+    await session.clear();
+  } catch (error) {
+    console.log("Session clear error:", error.message);
+  }
+  deleteCookie(event, "auth_token");
+  deleteCookie(event, "user_name");
+  deleteCookie(event, "user_id");
+  return {
+    success: true,
+    message: "\uB85C\uADF8\uC544\uC6C3\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  };
+});
+
+const logout_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: logout_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const register_post = defineEventHandler(async (event) => {
+  try {
+    const body = await readBody(event);
+    if (!body.userid || !body.name || !body.password || !body.email) {
+      return {
+        success: false,
+        error: "\uD544\uC218 \uD56D\uBAA9\uC744 \uBAA8\uB450 \uC785\uB825\uD574\uC8FC\uC138\uC694."
+      };
+    }
+    const pool = getDbPool();
+    const [existing] = await pool.query(
+      "SELECT userid FROM laon_tbl_user WHERE userid = ?",
+      [body.userid]
+    );
+    if (existing.length > 0) {
+      return {
+        success: false,
+        error: "\uC774\uBBF8 \uC0AC\uC6A9\uC911\uC778 \uC544\uC774\uB514\uC785\uB2C8\uB2E4."
+      };
+    }
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+    const hobbies = Array.isArray(body.hobbies) ? body.hobbies.join(",") : body.hobbies;
+    await pool.query(
+      "INSERT INTO laon_tbl_user (userid, name, password, email, job, hobbies, gender) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [body.userid, body.name, hashedPassword, body.email, body.job, hobbies, body.gender]
+    );
+    return {
+      success: true,
+      message: "\uD68C\uC6D0\uAC00\uC785\uC774 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    };
+  } catch (error) {
+    console.error("Register error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const register_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: register_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const _id__delete = defineEventHandler(async (event) => {
+  try {
+    const id = event.context.params.id;
+    const user = event.context.user;
+    const pool = getDbPool();
+    const [rows] = await pool.query(
+      "SELECT userid FROM laon_tbl_board WHERE bno = ?",
+      [id]
+    );
+    if (rows.length === 0) {
+      return {
+        success: false,
+        error: "\uAC8C\uC2DC\uBB3C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    if (rows[0].userid !== user.userid) {
+      return {
+        success: false,
+        error: "\uC0AD\uC81C \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    await pool.query(
+      "DELETE FROM laon_tbl_board WHERE bno = ?",
+      [id]
+    );
+    return {
+      success: true,
+      message: "\uAC8C\uC2DC\uBB3C\uC774 \uC0AD\uC81C\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const _id__delete$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: _id__delete
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const _id__get = defineEventHandler(async (event) => {
+  try {
+    const id = event.context.params.id;
+    const pool = getDbPool();
+    await pool.query(
+      "UPDATE laon_tbl_board SET hitno = hitno + 1 WHERE bno = ?",
+      [id]
+    );
+    const [rows] = await pool.query(
+      "SELECT bno, userid, writer, title, content, hitno, regDate FROM laon_tbl_board WHERE bno = ?",
+      [id]
+    );
+    if (rows.length === 0) {
+      return {
+        success: false,
+        error: "\uAC8C\uC2DC\uBB3C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    const [prevRows] = await pool.query(
+      "SELECT bno, title FROM laon_tbl_board WHERE bno < ? ORDER BY bno DESC LIMIT 1",
+      [id]
+    );
+    const [nextRows] = await pool.query(
+      "SELECT bno, title FROM laon_tbl_board WHERE bno > ? ORDER BY bno ASC LIMIT 1",
+      [id]
+    );
+    return {
+      success: true,
+      data: rows[0],
+      prev: prevRows.length > 0 ? prevRows[0] : null,
+      next: nextRows.length > 0 ? nextRows[0] : null
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const _id__get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: _id__get
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const _id__put = defineEventHandler(async (event) => {
+  try {
+    const id = event.context.params.id;
+    const body = await readBody(event);
+    const user = event.context.user;
+    const pool = getDbPool();
+    const [rows] = await pool.query(
+      "SELECT userid FROM laon_tbl_board WHERE bno = ?",
+      [id]
+    );
+    if (rows.length === 0) {
+      return {
+        success: false,
+        error: "\uAC8C\uC2DC\uBB3C\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    if (rows[0].userid !== user.userid) {
+      return {
+        success: false,
+        error: "\uC218\uC815 \uAD8C\uD55C\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."
+      };
+    }
+    await pool.query(
+      "UPDATE laon_tbl_board SET title = ?, content = ? WHERE bno = ?",
+      [body.title, body.content, id]
+    );
+    return {
+      success: true,
+      message: "\uAC8C\uC2DC\uBB3C\uC774 \uC218\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const _id__put$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: _id__put
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const create_post = defineEventHandler(async (event) => {
+  try {
+    const body = await readBody(event);
+    const user = event.context.user;
+    if (!body.title || !body.content) {
+      return {
+        success: false,
+        error: "\uC81C\uBAA9\uACFC \uB0B4\uC6A9\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694."
+      };
+    }
+    const pool = getDbPool();
+    const [result] = await pool.query(
+      "INSERT INTO laon_tbl_board (userid, writer, title, content, regDate) VALUES (?, ?, ?, ?, NOW())",
+      [user.userid, user.name, body.title, body.content]
+    );
+    return {
+      success: true,
+      message: "\uAC8C\uC2DC\uBB3C\uC774 \uB4F1\uB85D\uB418\uC5C8\uC2B5\uB2C8\uB2E4.",
+      insertId: result.insertId
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const create_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: create_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const boards = defineEventHandler(async (event) => {
+  try {
+    const query = getQuery$1(event);
+    const page = parseInt(query.page) || 1;
+    const limit = parseInt(query.limit) || 10;
+    const offset = (page - 1) * limit;
+    const pool = getDbPool();
+    const [countResult] = await pool.query(
+      "SELECT COUNT(*) as total FROM laon_tbl_board"
+    );
+    const totalCount = countResult[0].total;
+    const [rows] = await pool.query(
+      `SELECT 
+        bno, 
+        userid, 
+        writer, 
+        title, 
+        hitno, 
+        regDate,
+        (SELECT COUNT(*) FROM laon_tbl_board) - (
+          SELECT COUNT(*) FROM laon_tbl_board AS b2 WHERE b2.bno > laon_tbl_board.bno
+        ) AS rownum
+      FROM laon_tbl_board 
+      ORDER BY bno DESC 
+      LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+    return {
+      success: true,
+      data: rows,
+      pagination: {
+        currentPage: page,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        limit
+      }
+    };
+  } catch (error) {
+    console.error("Database error:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+const boards$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: boards
 }, Symbol.toStringTag, { value: 'Module' }));
 
 function renderPayloadResponse(ssrContext) {

@@ -1,85 +1,101 @@
 <!-- pages/index.vue -->
 <template>
-  <div>
-    <div class="hero">
-      <h1>🎉 최신 제품을 만나보세요</h1>
-      <p>다양한 카테고리의 제품을 둘러보세요</p>
-    </div>
-
-    <div class="search-section">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="제품 검색..."
-        class="search-input"
-      />
-    </div>
-
-    <!-- 로딩 -->
-    <div v-if="pending" class="loading">
-      <div class="spinner"></div>
-      <p>제품을 불러오는 중...</p>
-    </div>
-
-    <!-- 에러 -->
-    <div v-else-if="error" class="error">
-      <p>⚠️ 오류가 발생했습니다</p>
-      <button @click="refresh">다시 시도</button>
-    </div>
-
-    <!-- 제품 목록 -->
-    <div v-else>
-      <div class="products-grid">
-        <div
-          v-for="product in filteredProducts"
-          :key="product.id"
-          class="product-card"
-        >
-          <NuxtLink :to="`/products/${product.id}`" class="product-link">
-            <div class="product-image">
-              <img :src="product.thumbnail" :alt="product.title" />
-              <span class="discount-badge" v-if="product.discountPercentage > 0">
-                -{{ Math.round(product.discountPercentage) }}%
-              </span>
-            </div>
-            <div class="product-info">
-              <span class="category">{{ product.category }}</span>
-              <h3 class="product-title">{{ product.title }}</h3>
-              <p class="product-description">{{ product.description }}</p>
-              <div class="rating">
-                ⭐ {{ product.rating }} ({{ product.stock }}개 재고)
-              </div>
-              <div class="price-section">
-                <span class="price">${{ product.price }}</span>
-                <span class="original-price" v-if="product.discountPercentage > 0">
-                  ${{ Math.round(product.price / (1 - product.discountPercentage / 100)) }}
-                </span>
-              </div>
-            </div>
-          </NuxtLink>
-          <button @click="addToCart(product)" class="add-to-cart-btn">
-            🛒 장바구니 담기
-          </button>
+  <div class="container">
+    <!-- 로그인 안 했으면 경고 -->
+    <div v-if="!user" class="profile-container">
+      <div class="profile-wrapper">
+        <div class="alert alert-warning">
+          ⚠️ 로그인이 필요합니다.
         </div>
       </div>
+    </div>
 
-      <!-- 페이지네이션 -->
-      <div class="pagination">
-        <button
-          @click="currentPage--"
-          :disabled="currentPage === 1"
-          class="page-btn"
-        >
-          ← 이전
-        </button>
-        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-        <button
-          @click="currentPage++"
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-        >
-          다음 →
-        </button>
+    <!-- 로그인 했을 때만 메인 화면 -->
+    <div v-else>
+      <div class="user-info">
+        <span>{{ userName }}님 환영합니다</span>
+      </div>
+
+      <div class="hero">
+        <h1>🎉 최신 제품을 만나보세요</h1>
+        <p>다양한 카테고리의 제품을 둘러보세요</p>
+      </div>
+
+      <div class="search-section">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="제품 검색..."
+          class="search-input"
+        />
+      </div>
+
+      <!-- 로딩 -->
+      <div v-if="pending" class="loading">
+        <div class="spinner"></div>
+        <p>제품을 불러오는 중...</p>
+      </div>
+
+      <!-- 에러 -->
+      <div v-else-if="error" class="error">
+        <p>⚠️ 오류가 발생했습니다</p>
+        <button @click="refresh">다시 시도</button>
+      </div>
+
+      <!-- 제품 목록 -->
+      <div v-else>
+        <div class="products-grid">
+          <div
+            v-for="product in filteredProducts"
+            :key="product.id"
+            class="product-card"
+          >
+            <NuxtLink :to="`/products/${product.id}`" class="product-link">
+              <div class="product-image">
+                <img :src="product.thumbnail" :alt="product.title" />
+                <span class="discount-badge" v-if="product.discountPercentage > 0">
+                  -{{ Math.round(product.discountPercentage) }}%
+                </span>
+              </div>
+              <div class="product-info">
+                <span class="category">{{ product.category }}</span>
+                <h3 class="product-title">{{ product.title }}</h3>
+                <p class="product-description">{{ product.description }}</p>
+                <div class="rating">
+                  ⭐ {{ product.rating }} ({{ product.stock }}개 재고)
+                </div>
+                <div class="price-section">
+                  <span class="price">${{ product.price }}</span>
+                  <span class="original-price" v-if="product.discountPercentage > 0">
+                    ${{ Math.round(product.price / (1 - product.discountPercentage / 100)) }}
+                  </span>
+                </div>
+              </div>
+            </NuxtLink>
+            <button @click="addToCart(product)" class="add-to-cart-btn">
+              🛒 장바구니 담기
+            </button>
+          </div>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="pagination">
+          <button
+            @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="page-btn"
+          >
+            ← 이전
+          </button>
+          <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+          <button
+            @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="page-btn"
+          >
+            다음 →
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -368,5 +384,23 @@ const totalPages = computed(() => {
 .page-info {
   font-size: 16px;
   font-weight: 500;
+}
+
+.profile-container {
+  /* min-height: calc(100vh - 80px); */
+  background: white;
+  /* padding: 2rem 0; */
+}
+
+.profile-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  text-align: center; /* 텍스트도 중앙으로 */
+}
+
+.user-info {
+  color: #666;
+  font-size: 14px;
 }
 </style>

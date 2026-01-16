@@ -9,6 +9,10 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
+    "@sidebase/nuxt-session": "^0.2.8",
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.16.0",
     "nuxt": "^3.15.1",
     "vue": "^3.5.13"
   }
