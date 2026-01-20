@@ -437,12 +437,33 @@ const checkCommentsLikeStatus = async () => {
   if (!user.value) return;
   
   try {
-    const commentIds = comments.value.map(c => c.comment_id);
+    const commentIds = [];
     
-    // 각 댓글의 좋아요 상태 확인
+    // 일반 댓글 ID 수집
+    comments.value.forEach(c => commentIds.push(c.comment_id));
+    
+    // 대댓글 ID 수집
+    comments.value.forEach(c => {
+      if (c.replies && c.replies.length > 0) {
+        c.replies.forEach(r => commentIds.push(r.comment_id));
+      }
+    });
+    
+    // 각 댓글(대댓글 포함)의 좋아요 상태 확인
     for (const commentId of commentIds) {
       const response = await $fetch(`/api/boards/${route.params.id}/comments/${commentId}/like/status?userid=${user.value.userid}`);
-      const comment = comments.value.find(c => c.comment_id === commentId);
+      
+      // 일반 댓글에서 찾기
+      let comment = comments.value.find(c => c.comment_id === commentId);
+      
+      // 대댓글에서 찾기
+      if (!comment) {
+        for (const parentComment of comments.value) {
+          comment = parentComment.replies?.find(r => r.comment_id === commentId);
+          if (comment) break;
+        }
+      }
+      
       if (comment) {
         comment.is_liked = response.liked || false;
       }
